@@ -1,0 +1,128 @@
+datasource db {
+  provider = "sqlite"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id            String       @id @default(cuid())
+  name          String?
+  email         String?      @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?  // Stores hashed password
+  role          UserRole     @default(CLIENT)
+  accounts      Account[]
+  sessions      Session[]
+  agentId       String?
+  agent         User?        @relation("AgentClients", fields: [agentId], references: [id])
+  clients       User[]       @relation("AgentClients")
+  transactions  Transaction[]
+  budgets       Budget[]
+  goals         Goal[]
+  loans         Loan[]
+  documents     Document[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+enum UserRole {
+  CLIENT
+  AGENT
+  ADMIN
+}
+
+model Transaction {
+  id          String   @id @default(cuid())
+  amount      Float
+  type        String // e.g., "deposit", "withdrawal", "transfer"
+  description String?
+  createdAt   DateTime @default(now())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+model Budget {
+  id        String   @id @default(cuid())
+  name      String
+  amount    Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Goal {
+  id           String   @id @default(cuid())
+  name         String
+  targetAmount Float
+  currentAmount Float
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
+}
+
+model Loan {
+  id        String     @id @default(cuid())
+  amount    Float
+  purpose   String
+  status    LoanStatus @default(PENDING)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  userId    String
+  user      User       @relation(fields: [userId], references: [id])
+  documents Document[]
+}
+
+enum LoanStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Document {
+  id        String   @id @default(cuid())
+  url       String
+  type      String // e.g., "ID", "Proof of Income"
+  createdAt DateTime @default(now())
+  loanId    String?
+  loan      Loan?    @relation(fields: [loanId], references: [id])
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+}

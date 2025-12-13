@@ -1,0 +1,16 @@
+# Ignore Prisma files (not used in this project - using localStorage instead)
+prisma/
+*.prisma
+lib/prisma.ts
+prisma.config.ts
+
+# Ignore documentation files
+*.md
+!README.md
+
+# Ignore test files
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+

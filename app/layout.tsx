@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "FinBridge - Rural Banking Platform",
+  title: "Bankify - Rural Banking Platform",
   description: "Financial platform for rural banking operations",
 };
 

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Header } from "@/components/layout/header"
 import { PageShell, PageHeader } from "@/components/shared/page-shell"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -33,7 +33,8 @@ import {
   MoreHorizontal,
   Eye,
   FileText,
-  Receipt
+  Receipt,
+  RefreshCw
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -42,32 +43,65 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { format } from "date-fns"
-
-const transactions = [
-  { id: "TXN-2024-001", date: "2024-01-15", client: "Jean Baptiste", accountNo: "****1234", type: "deposit", amount: 50000, status: "completed", commission: 1250 },
-  { id: "TXN-2024-002", date: "2024-01-14", client: "Marie Claire", accountNo: "****5678", type: "deposit", amount: 25000, status: "completed", commission: 625 },
-  { id: "TXN-2024-003", date: "2024-01-14", client: "Pierre Martin", accountNo: "****9012", type: "withdrawal", amount: 100000, status: "pending", commission: 2500 },
-  { id: "TXN-2024-004", date: "2024-01-13", client: "Sophie Durand", accountNo: "****3456", type: "deposit", amount: 35000, status: "completed", commission: 875 },
-  { id: "TXN-2024-005", date: "2024-01-12", client: "Paul Mugisha", accountNo: "****7890", type: "transfer", amount: 80000, status: "completed", commission: 2000 },
-  { id: "TXN-2024-006", date: "2024-01-11", client: "Grace Uwimana", accountNo: "****2345", type: "deposit", amount: 45000, status: "failed", commission: 0 },
-  { id: "TXN-2024-007", date: "2024-01-10", client: "Emmanuel Habimana", accountNo: "****6789", type: "deposit", amount: 120000, status: "completed", commission: 3000 },
-  { id: "TXN-2024-008", date: "2024-01-09", client: "Diane Mukamana", accountNo: "****0123", type: "withdrawal", amount: 60000, status: "completed", commission: 1500 },
-]
+import { formatTND } from "@/lib/currency"
+import { getTransactions, getAllUsers, type Transaction } from "@/lib/json-storage"
 
 export default function TransactionHistory() {
+  const [transactions, setTransactions] = useState<Transaction[]>([])
   const [searchQuery, setSearchQuery] = useState("")
   const [typeFilter, setTypeFilter] = useState("all")
   const [statusFilter, setStatusFilter] = useState("all")
   const [date, setDate] = useState<Date>()
 
-  const filteredTransactions = transactions.filter((txn) => {
+  useEffect(() => {
+    // Load all transactions for agent view
+    const allTransactions = getTransactions()
+    setTransactions(allTransactions)
+  }, [])
+
+  const handleRefresh = () => {
+    const allTransactions = getTransactions()
+    setTransactions(allTransactions)
+  }
+
+  // Get user names for display
+  const users = getAllUsers()
+  const getUserName = (userId: string) => {
+    const user = users.find(u => u.id === userId)
+    return user?.name || "Unknown User"
+  }
+
+  const getUserEmail = (userId: string) => {
+    const user = users.find(u => u.id === userId)
+    return user?.email || ""
+  }
+
+  // Transform transactions for display
+  const displayTransactions = transactions.map(txn => {
+    const userName = getUserName(txn.userId)
+    const userEmail = getUserEmail(txn.userId)
+    const accountNo = userEmail ? `****${userEmail.substring(0, 4)}` : "****----"
+    // Calculate commission (0.5% for deposits/withdrawals)
+    const commission = txn.status === "completed" ? txn.amount * 0.005 : 0
+    
+    return {
+      ...txn,
+      client: userName,
+      accountNo: accountNo,
+      commission: commission
+    }
+  })
+
+  const filteredTransactions = displayTransactions.filter((txn) => {
     const matchesSearch = 
       txn.client.toLowerCase().includes(searchQuery.toLowerCase()) ||
       txn.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      txn.accountNo.includes(searchQuery)
+      txn.accountNo.includes(searchQuery) ||
+      txn.description.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesType = typeFilter === "all" || txn.type === typeFilter
     const matchesStatus = statusFilter === "all" || txn.status === statusFilter
-    return matchesSearch && matchesType && matchesStatus
+    const matchesDate = !date || txn.date === format(date, "yyyy-MM-dd")
+    return matchesSearch && matchesType && matchesStatus && matchesDate
   })
 
   const getStatusBadge = (status: string) => {
@@ -104,10 +138,16 @@ export default function TransactionHistory() {
           title="Transaction History" 
           description="Complete record of all deposits and transactions"
           actions={
-            <Button variant="outline">
-              <Download className="mr-2 h-4 w-4" />
-              Export to PDF
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={handleRefresh}>
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Refresh
+              </Button>
+              <Button variant="outline" size="sm">
+                <Download className="mr-2 h-4 w-4" />
+                Export to PDF
+              </Button>
+            </div>
           }
         />
 
@@ -205,10 +245,10 @@ export default function TransactionHistory() {
                         <TableCell className="font-mono text-sm">{txn.accountNo}</TableCell>
                         <TableCell>{getTypeBadge(txn.type)}</TableCell>
                         <TableCell className="text-right font-semibold">
-                          ${txn.amount.toLocaleString()}
+                          {formatTND(txn.amount)}
                         </TableCell>
                         <TableCell className="text-right text-primary">
-                          ${txn.commission.toLocaleString()}
+                          {formatTND(txn.commission)}
                         </TableCell>
                         <TableCell>{getStatusBadge(txn.status)}</TableCell>
                         <TableCell>
@@ -240,7 +280,7 @@ export default function TransactionHistory() {
             {/* Pagination */}
             <div className="mt-4 flex items-center justify-between">
               <p className="text-sm text-muted-foreground">
-                Showing {filteredTransactions.length} of {transactions.length} transactions
+                Showing {filteredTransactions.length} of {transactions.length} transaction{transactions.length !== 1 ? 's' : ''}
               </p>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" disabled>

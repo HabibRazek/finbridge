@@ -128,9 +128,9 @@ After deployment, test these features:
 ### 2. Login
 - Click "Get Started" or navigate to `/login`
 - ✅ Login with demo credentials:
-  - Agent: agent@finbridge.tn / agent123
-  - Client: client@finbridge.tn / client123
-  - Admin: admin@finbridge.tn / admin123
+  - Agent: agent@bankify.tn / agent123
+  - Client: client@bankify.tn / client123
+  - Admin: admin@bankify.tn / admin123
 
 ### 3. Role-Based Access
 - ✅ Agent sees: Agent Portal + Loan Management

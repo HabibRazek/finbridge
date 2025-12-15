@@ -51,7 +51,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
 
 The application uses **localStorage-based authentication** in the login page:
 
-1. User enters credentials (demo users: agent@finbridge.tn, client@finbridge.tn, admin@finbridge.tn)
+1. User enters credentials (demo users: agent@bankify.tn, client@bankify.tn, admin@bankify.tn)
 2. Login page validates against hardcoded demo users
 3. On success, stores user info in localStorage
 4. Redirects to appropriate portal (agent/client)
@@ -97,7 +97,7 @@ The application uses **localStorage-based authentication** in the login page:
 3. **Test authentication**:
    - Go to http://localhost:3000/login
    - Login with demo credentials:
-     - Email: `agent@finbridge.tn`
+     - Email: `agent@bankify.tn`
      - Password: `agent123`
    - Should redirect to agent portal without errors
 

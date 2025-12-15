@@ -97,17 +97,17 @@ The sidebar then dynamically renders only the sections returned by `getMenuSecti
 ## Testing
 
 ### Test Agent Sidebar:
-1. Login as **agent@finbridge.tn** / **agent123**
+1. Login as **agent@bankify.tn** / **agent123**
 2. ✅ Should see: Agent Portal + Loan Management
 3. ✅ Should NOT see: Client Portal, Admin Portal
 
 ### Test Client Sidebar:
-1. Login as **client@finbridge.tn** / **client123**
+1. Login as **client@bankify.tn** / **client123**
 2. ✅ Should see: Client Portal + Loan Management
 3. ✅ Should NOT see: Agent Portal, Admin Portal
 
 ### Test Admin Sidebar:
-1. Login as **admin@finbridge.tn** / **admin123**
+1. Login as **admin@bankify.tn** / **admin123**
 2. ✅ Should see: Admin Portal + Agent Portal + Client Portal + Loan Management
 3. ✅ Full access to all features
 

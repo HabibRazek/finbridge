@@ -1,10 +1,10 @@
-# FinBridge Technical Architecture
+# Bankify Technical Architecture
 
-This document outlines the technical architecture for the FinBridge application.
+This document outlines the technical architecture for the Bankify application.
 
 ## 1. System Architecture
 
-FinBridge will be a monolithic application built on Next.js. The frontend and backend will be tightly coupled within the same Next.js project. This approach simplifies development and deployment for a project of this scale.
+Bankify will be a monolithic application built on Next.js. The frontend and backend will be tightly coupled within the same Next.js project. This approach simplifies development and deployment for a project of this scale.
 
 - **Frontend:** Built with React and server-side rendering (SSR) or static site generation (SSG) from Next.js for performance.
 - **Backend:** Implemented using Next.js API routes.

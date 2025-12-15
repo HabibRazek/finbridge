@@ -1,6 +1,6 @@
-# FinBridge - Demo Guide 🚀
+# Bankify - Demo Guide 🚀
 
-## 🎉 Welcome to FinBridge!
+## 🎉 Welcome to Bankify!
 
 Your modern, innovative rural banking platform built with Next.js, featuring stunning UI and DT (Tunisian Dinar) currency support.
 
@@ -35,17 +35,17 @@ Your modern, innovative rural banking platform built with Next.js, featuring stu
 ## 🎯 Demo Credentials
 
 ### Agent Portal
-- **Email:** agent@finbridge.tn
+- **Email:** agent@bankify.tn
 - **Password:** agent123
 - **Features:** Commission tracking, transaction management, client verification
 
 ### Client Portal
-- **Email:** client@finbridge.tn
+- **Email:** client@bankify.tn
 - **Password:** client123
 - **Features:** Balance tracking, budgets, savings goals
 
 ### Admin Portal
-- **Email:** admin@finbridge.tn
+- **Email:** admin@bankify.tn
 - **Password:** admin123
 - **Features:** Full system access
 
@@ -135,5 +135,5 @@ To customize the app:
 
 **Built with ❤️ for rural banking in Tunisia**
 
-Enjoy exploring FinBridge! 🎉
+Enjoy exploring Bankify! 🎉
 

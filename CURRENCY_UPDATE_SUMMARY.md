@@ -1,7 +1,7 @@
 # Currency Update Summary - USD to DT
 
 ## Overview
-Successfully updated the entire FinBridge application to use **DT (Tunisian Dinar)** instead of USD ($) or TND symbol.
+Successfully updated the entire Bankify application to use **DT (Tunisian Dinar)** instead of USD ($) or TND symbol.
 
 ## Changes Made
 

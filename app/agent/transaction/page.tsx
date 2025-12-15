@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Header } from "@/components/layout/header"
 import { PageShell, PageHeader } from "@/components/shared/page-shell"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -26,29 +27,87 @@ import {
   AlertCircle,
   Loader2
 } from "lucide-react"
+import { useAuth } from "@/lib/auth-context"
+import { getUserByEmail, createTransaction, getAllUsers } from "@/lib/json-storage"
 
 export default function RecordTransaction() {
+  const { user } = useAuth()
+  const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [success, setSuccess] = useState(false)
+  const [error, setError] = useState("")
   const [formData, setFormData] = useState({
     amount: "",
-    accountNumber: "",
-    accountName: "",
+    clientEmail: "",
     transactionType: "",
     notes: "",
   })
 
   const currentTime = new Date().toLocaleString()
-  const currentLocation = "Kigali, Rwanda" // Would be fetched from GPS
+  const currentLocation = "Tunis, Tunisia" // Would be fetched from GPS
+
+  // Get all clients for dropdown
+  const clients = getAllUsers().filter(u => u.role === 'client')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setError("")
+    setSuccess(false)
+    
+    if (!formData.amount || !formData.clientEmail || !formData.transactionType) {
+      setError("Please fill in all required fields")
+      return
+    }
+
+    const amount = parseFloat(formData.amount)
+    if (isNaN(amount) || amount <= 0) {
+      setError("Please enter a valid amount")
+      return
+    }
+
     setIsSubmitting(true)
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    setIsSubmitting(false)
+
+    try {
+      // Find client user
+      const clientUser = getUserByEmail(formData.clientEmail)
+      if (!clientUser) {
+        setError("Client not found")
+        setIsSubmitting(false)
+        return
+      }
+
+      // Create transaction
+      createTransaction({
+        userId: clientUser.id,
+        amount: amount,
+        type: formData.transactionType as 'deposit' | 'withdrawal' | 'transfer',
+        description: formData.notes || `${formData.transactionType} transaction`,
+        date: new Date().toISOString().split('T')[0],
+        status: 'completed',
+        from: formData.transactionType === 'withdrawal' ? clientUser.email : null,
+        to: formData.transactionType === 'deposit' ? clientUser.email : null
+      })
+
+      setSuccess(true)
+      
+      // Reset form after 2 seconds
+      setTimeout(() => {
+        setFormData({
+          amount: "",
+          clientEmail: "",
+          transactionType: "",
+          notes: "",
+        })
+        setSuccess(false)
+      }, 2000)
+    } catch (err: any) {
+      setError(err.message || "Failed to create transaction")
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
-  const commission = formData.amount ? (parseFloat(formData.amount) * 0.025).toFixed(2) : "0.00"
+  const commission = formData.amount ? (parseFloat(formData.amount) * 0.005).toFixed(2) : "0.00"
 
   return (
     <>
@@ -102,51 +161,63 @@ export default function RecordTransaction() {
                   </div>
                 </div>
 
-                {/* Account Number */}
+                {/* Client Selection */}
                 <div className="space-y-2">
-                  <Label htmlFor="accountNumber">Client Bank Account Number</Label>
-                  <div className="relative">
-                    <CreditCard className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      id="accountNumber"
-                      placeholder="Enter account number"
-                      className="pl-10"
-                      value={formData.accountNumber}
-                      onChange={(e) => setFormData({ ...formData, accountNumber: e.target.value })}
-                    />
-                  </div>
-                </div>
-
-                {/* Account Name */}
-                <div className="space-y-2">
-                  <Label htmlFor="accountName">Account Holder Name</Label>
-                  <Input
-                    id="accountName"
-                    placeholder="Enter account holder name"
-                    value={formData.accountName}
-                    onChange={(e) => setFormData({ ...formData, accountName: e.target.value })}
-                  />
+                  <Label htmlFor="clientEmail">Select Client <span className="text-red-500">*</span></Label>
+                  <Select
+                    value={formData.clientEmail}
+                    onValueChange={(value) => setFormData({ ...formData, clientEmail: value })}
+                  >
+                    <SelectTrigger id="clientEmail">
+                      <SelectValue placeholder="Select a client" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {clients.map((client) => (
+                        <SelectItem key={client.id} value={client.email}>
+                          {client.name} ({client.email})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 {/* Notes */}
                 <div className="space-y-2">
-                  <Label htmlFor="notes">Notes (Optional)</Label>
+                  <Label htmlFor="notes">Description/Notes</Label>
                   <Textarea
                     id="notes"
-                    placeholder="Add any additional notes..."
+                    placeholder="Add transaction description or notes..."
                     value={formData.notes}
                     onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                   />
                 </div>
 
+                {error && (
+                  <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">
+                    {error}
+                  </div>
+                )}
+
+                {success && (
+                  <div className="rounded-lg bg-green-50 p-3 text-sm text-green-600 dark:bg-green-900/20 dark:text-green-400 flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4" />
+                    Transaction recorded successfully!
+                  </div>
+                )}
+
                 <Separator />
 
                 {/* Submit Button */}
-                <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>
+                <Button type="submit" className="w-full" size="lg" disabled={isSubmitting || success}>
                   {isSubmitting ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Processing...
+                    </>
+                  ) : success ? (
+                    <>
+                      <CheckCircle2 className="mr-2 h-4 w-4" />
+                      Transaction Saved!
                     </>
                   ) : (
                     <>
@@ -196,7 +267,7 @@ export default function RecordTransaction() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-muted-foreground">Commission Rate</span>
-                  <span className="font-medium">2.5%</span>
+                  <span className="font-medium">0.5%</span>
                 </div>
                 <Separator />
                 <div className="flex justify-between">

@@ -105,17 +105,17 @@ Successfully implemented role-based access control (RBAC) with proper authentica
 ## Demo Credentials
 
 ### Agent Account (Can Add Users)
-- **Email:** agent@finbridge.tn
+- **Email:** agent@bankify.tn
 - **Password:** agent123
 - **Access:** User Management, Transactions, Commissions, Verification
 
 ### Client Account
-- **Email:** client@finbridge.tn
+- **Email:** client@bankify.tn
 - **Password:** client123
 - **Access:** Budget, Goals, Transaction History, Loans
 
 ### Admin Account
-- **Email:** admin@finbridge.tn
+- **Email:** admin@bankify.tn
 - **Password:** admin123
 - **Access:** All features (future implementation)
 
@@ -152,7 +152,7 @@ Successfully implemented role-based access control (RBAC) with proper authentica
 5. ✅ Should not be able to access protected routes
 
 ### Test Agent User Management:
-1. Login as agent@finbridge.tn / agent123
+1. Login as agent@bankify.tn / agent123
 2. Navigate to "User Management" in sidebar
 3. Click "Add New User"
 4. Fill in user details (name, email, password, role)
@@ -161,7 +161,7 @@ Successfully implemented role-based access control (RBAC) with proper authentica
 7. Click "Deactivate" to toggle user status
 
 ### Test Role Protection:
-1. Login as client@finbridge.tn
+1. Login as client@bankify.tn
 2. Try to access `/agent/users` directly
 3. ✅ Should redirect to `/client`
 4. Logout and login as agent

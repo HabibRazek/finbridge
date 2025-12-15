@@ -83,7 +83,7 @@ export default function AgentDashboard() {
           />
           <StatCard
             title="Commission Rate"
-            value="2.5%"
+            value="0.5%"
             icon={TrendingUp}
             description="Per transaction"
           />

@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Header } from "@/components/layout/header"
 import { PageShell, PageHeader } from "@/components/shared/page-shell"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
@@ -26,9 +27,12 @@ import {
   DollarSign,
   FileText,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Loader2
 } from "lucide-react"
 import { formatTND } from "@/lib/currency"
+import { useAuth } from "@/lib/auth-context"
+import { getUserByEmail, createLoan } from "@/lib/json-storage"
 
 const steps = [
   { id: 1, name: "Personal Info", icon: User },
@@ -38,7 +42,13 @@ const steps = [
 ]
 
 export default function LoanApplication() {
+  const { user } = useAuth()
+  const router = useRouter()
   const [currentStep, setCurrentStep] = useState(1)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState("")
+  const [success, setSuccess] = useState(false)
+  
   const [formData, setFormData] = useState({
     // Personal Info
     fullName: "",
@@ -63,23 +73,110 @@ export default function LoanApplication() {
     agreeCredit: false,
   })
 
+  // Pre-fill form with user data if logged in
+  useEffect(() => {
+    if (user?.email) {
+      const clientUser = getUserByEmail(user.email)
+      if (clientUser) {
+        setFormData(prev => ({
+          ...prev,
+          fullName: clientUser.name || prev.fullName,
+          email: clientUser.email || prev.email,
+          phone: clientUser.phone || prev.phone,
+          address: clientUser.address || prev.address,
+          dateOfBirth: clientUser.dateOfBirth || prev.dateOfBirth,
+        }))
+      }
+    }
+  }, [user])
+
   const progress = (currentStep / steps.length) * 100
 
   const handleNext = () => {
+    // Validate current step before proceeding
+    if (currentStep === 1) {
+      if (!formData.fullName || !formData.dateOfBirth || !formData.nationalId || !formData.phone || !formData.address) {
+        setError("Please fill in all required fields")
+        return
+      }
+    } else if (currentStep === 2) {
+      if (!formData.employmentStatus || !formData.employerName || !formData.jobTitle || !formData.monthlyIncome || !formData.yearsEmployed) {
+        setError("Please fill in all required fields")
+        return
+      }
+    } else if (currentStep === 3) {
+      if (!formData.loanType || !formData.loanAmount || !formData.loanPurpose || !formData.loanTerm) {
+        setError("Please fill in all required fields")
+        return
+      }
+    }
+    setError("")
     if (currentStep < steps.length) {
       setCurrentStep(currentStep + 1)
     }
   }
 
   const handlePrevious = () => {
+    setError("")
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1)
     }
   }
 
-  const handleSubmit = () => {
-    // Handle form submission
-    console.log("Form submitted:", formData)
+  const handleSubmit = async () => {
+    if (!formData.agreeTerms || !formData.agreeCredit) {
+      setError("Please agree to the terms and conditions")
+      return
+    }
+
+    if (!user?.email) {
+      setError("Please log in to submit a loan application")
+      return
+    }
+
+    setIsSubmitting(true)
+    setError("")
+
+    try {
+      const clientUser = getUserByEmail(user.email)
+      if (!clientUser) {
+        setError("User not found. Please log in again.")
+        setIsSubmitting(false)
+        return
+      }
+
+      // Calculate interest rate based on loan type and term
+      const baseRate = 6.5
+      const termMonths = parseInt(formData.loanTerm)
+      let interestRate = baseRate
+      
+      if (formData.loanType === "business") {
+        interestRate = baseRate + 0.5
+      } else if (formData.loanType === "agriculture") {
+        interestRate = baseRate - 0.5
+      }
+
+      // Create loan application
+      const newLoan = createLoan({
+        userId: clientUser.id,
+        amount: parseFloat(formData.loanAmount),
+        purpose: formData.loanPurpose,
+        status: "pending",
+        applicationDate: new Date().toISOString().split('T')[0],
+        interestRate: interestRate,
+        term: termMonths
+      })
+
+      setSuccess(true)
+      
+      // Redirect to loan status page after 2 seconds
+      setTimeout(() => {
+        router.push("/loan/status")
+      }, 2000)
+    } catch (err: any) {
+      setError(err.message || "Failed to submit loan application. Please try again.")
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -180,16 +277,16 @@ export default function LoanApplication() {
                     onChange={(e) => setFormData({ ...formData, nationalId: e.target.value })}
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number *</Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    placeholder="+250 7XX XXX XXX"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  />
-                </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Phone Number *</Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      placeholder="+216 XX XXX XXX"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    />
+                  </div>
                 <div className="space-y-2">
                   <Label htmlFor="email">Email Address</Label>
                   <Input
@@ -250,11 +347,12 @@ export default function LoanApplication() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="income">Monthly Income (RWF) *</Label>
+                    <Label htmlFor="income">Monthly Income (TND) *</Label>
                     <Input
                       id="income"
                       type="number"
-                      placeholder="0"
+                      placeholder="0.000"
+                      step="0.001"
                       value={formData.monthlyIncome}
                       onChange={(e) => setFormData({ ...formData, monthlyIncome: e.target.value })}
                     />
@@ -314,11 +412,12 @@ export default function LoanApplication() {
                 </div>
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="amount">Loan Amount (RWF) *</Label>
+                    <Label htmlFor="amount">Loan Amount (TND) *</Label>
                     <Input
                       id="amount"
                       type="number"
                       placeholder="Enter amount"
+                      step="0.001"
                       value={formData.loanAmount}
                       onChange={(e) => setFormData({ ...formData, loanAmount: e.target.value })}
                     />
@@ -392,7 +491,7 @@ export default function LoanApplication() {
                       </div>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Monthly Income</span>
-                        <span className="font-medium">{formData.monthlyIncome ? formatTND(parseInt(formData.monthlyIncome)) : "—"}</span>
+                        <span className="font-medium">{formData.monthlyIncome ? formatTND(parseFloat(formData.monthlyIncome)) : "—"}</span>
                       </div>
                     </div>
                   </div>
@@ -408,7 +507,7 @@ export default function LoanApplication() {
                     </div>
                     <div>
                       <span className="text-muted-foreground">Amount</span>
-                      <p className="font-medium">{formData.loanAmount ? formatTND(parseInt(formData.loanAmount)) : "—"}</p>
+                      <p className="font-medium">{formData.loanAmount ? formatTND(parseFloat(formData.loanAmount)) : "—"}</p>
                     </div>
                     <div>
                       <span className="text-muted-foreground">Term</span>
@@ -440,28 +539,55 @@ export default function LoanApplication() {
                 </div>
               </div>
             )}
+
+            {error && (
+              <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">
+                {error}
+              </div>
+            )}
+
+            {success && (
+              <div className="rounded-lg bg-green-50 p-3 text-sm text-green-600 dark:bg-green-900/20 dark:text-green-400 flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4" />
+                Loan application submitted successfully! Redirecting...
+              </div>
+            )}
           </CardContent>
           <CardFooter className="flex justify-between">
             <Button
               variant="outline"
               onClick={handlePrevious}
-              disabled={currentStep === 1}
+              disabled={currentStep === 1 || isSubmitting}
             >
               <ChevronLeft className="mr-2 h-4 w-4" />
               Previous
             </Button>
             {currentStep < steps.length ? (
-              <Button onClick={handleNext}>
+              <Button onClick={handleNext} disabled={isSubmitting}>
                 Next
                 <ChevronRight className="ml-2 h-4 w-4" />
               </Button>
             ) : (
               <Button
                 onClick={handleSubmit}
-                disabled={!formData.agreeTerms || !formData.agreeCredit}
+                disabled={!formData.agreeTerms || !formData.agreeCredit || isSubmitting || success}
               >
-                Submit Application
-                <CheckCircle2 className="ml-2 h-4 w-4" />
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Submitting...
+                  </>
+                ) : success ? (
+                  <>
+                    <CheckCircle2 className="mr-2 h-4 w-4" />
+                    Submitted!
+                  </>
+                ) : (
+                  <>
+                    Submit Application
+                    <CheckCircle2 className="ml-2 h-4 w-4" />
+                  </>
+                )}
               </Button>
             )}
           </CardFooter>

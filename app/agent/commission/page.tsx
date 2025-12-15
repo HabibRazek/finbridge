@@ -32,20 +32,20 @@ import {
 import { formatTND } from "@/lib/currency"
 
 const monthlyData = [
-  { month: "Jan", deposits: 45000, withdrawals: 12000, commission: 1425 },
-  { month: "Feb", deposits: 52000, withdrawals: 15000, commission: 1675 },
-  { month: "Mar", deposits: 48000, withdrawals: 18000, commission: 1650 },
-  { month: "Apr", deposits: 61000, withdrawals: 20000, commission: 2025 },
-  { month: "May", deposits: 55000, withdrawals: 22000, commission: 1925 },
-  { month: "Jun", deposits: 70000, withdrawals: 25000, commission: 2375 },
+  { month: "Jan", deposits: 45000, withdrawals: 12000, commission: 285 },
+  { month: "Feb", deposits: 52000, withdrawals: 15000, commission: 335 },
+  { month: "Mar", deposits: 48000, withdrawals: 18000, commission: 330 },
+  { month: "Apr", deposits: 61000, withdrawals: 20000, commission: 405 },
+  { month: "May", deposits: 55000, withdrawals: 22000, commission: 385 },
+  { month: "Jun", deposits: 70000, withdrawals: 25000, commission: 475 },
 ]
 
 const commissionHistory = [
-  { id: "COM001", date: "2024-01-15", transaction: "TXN-2024-001", amount: 50000, rate: "2.5%", commission: 1250, status: "paid" },
-  { id: "COM002", date: "2024-01-14", transaction: "TXN-2024-002", amount: 25000, rate: "2.5%", commission: 625, status: "paid" },
-  { id: "COM003", date: "2024-01-14", transaction: "TXN-2024-003", amount: 100000, rate: "2.5%", commission: 2500, status: "pending" },
-  { id: "COM004", date: "2024-01-13", transaction: "TXN-2024-004", amount: 35000, rate: "2.5%", commission: 875, status: "paid" },
-  { id: "COM005", date: "2024-01-12", transaction: "TXN-2024-005", amount: 80000, rate: "2.5%", commission: 2000, status: "paid" },
+  { id: "COM001", date: "2024-01-15", transaction: "TXN-2024-001", amount: 50000, rate: "0.5%", commission: 250, status: "paid" },
+  { id: "COM002", date: "2024-01-14", transaction: "TXN-2024-002", amount: 25000, rate: "0.5%", commission: 125, status: "paid" },
+  { id: "COM003", date: "2024-01-14", transaction: "TXN-2024-003", amount: 100000, rate: "0.5%", commission: 500, status: "pending" },
+  { id: "COM004", date: "2024-01-13", transaction: "TXN-2024-004", amount: 35000, rate: "0.5%", commission: 175, status: "paid" },
+  { id: "COM005", date: "2024-01-12", transaction: "TXN-2024-005", amount: 80000, rate: "0.5%", commission: 400, status: "paid" },
 ]
 
 const tierData = [
@@ -83,27 +83,27 @@ export default function CommissionPage() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <StatCard
             title="Total Earned (This Month)"
-            value={formatTND(2375)}
+            value={formatTND(475)}
             icon={Banknote}
             trend={{ value: 15.2, isPositive: true }}
             description="vs last month"
           />
           <StatCard
             title="Pending Commission"
-            value={formatTND(2500)}
+            value={formatTND(500)}
             icon={Wallet}
             description="3 transactions pending"
           />
           <StatCard
             title="Average Per Transaction"
-            value={formatTND(47.50)}
+            value={formatTND(9.50)}
             icon={TrendingUp}
             trend={{ value: 5.8, isPositive: true }}
             description="vs last month"
           />
           <StatCard
             title="Commission Rate"
-            value="2.5%"
+            value="0.5%"
             icon={Calendar}
             description="Standard tier"
           />

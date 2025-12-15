@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Header } from "@/components/layout/header"
 import { PageShell, PageHeader } from "@/components/shared/page-shell"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -21,57 +21,9 @@ import {
   ChevronRight,
   RefreshCw
 } from "lucide-react"
-
-const loanApplications = [
-  {
-    id: "LN-2024-001",
-    type: "Personal Loan",
-    amount: 500000,
-    status: "under_review",
-    appliedDate: "2024-01-10",
-    lastUpdate: "2024-01-12",
-    currentStep: 2,
-    steps: [
-      { name: "Application Submitted", date: "Jan 10, 2024", status: "completed" },
-      { name: "Document Verification", date: "Jan 11, 2024", status: "completed" },
-      { name: "Credit Assessment", date: "In Progress", status: "current" },
-      { name: "Committee Review", date: "Pending", status: "pending" },
-      { name: "Final Decision", date: "Pending", status: "pending" },
-    ],
-  },
-  {
-    id: "LN-2024-002",
-    type: "Business Loan",
-    amount: 2000000,
-    status: "approved",
-    appliedDate: "2023-12-15",
-    lastUpdate: "2024-01-05",
-    currentStep: 5,
-    steps: [
-      { name: "Application Submitted", date: "Dec 15, 2023", status: "completed" },
-      { name: "Document Verification", date: "Dec 18, 2023", status: "completed" },
-      { name: "Credit Assessment", date: "Dec 22, 2023", status: "completed" },
-      { name: "Committee Review", date: "Jan 3, 2024", status: "completed" },
-      { name: "Final Decision", date: "Jan 5, 2024", status: "completed" },
-    ],
-  },
-  {
-    id: "LN-2023-045",
-    type: "Agriculture Loan",
-    amount: 300000,
-    status: "rejected",
-    appliedDate: "2023-11-20",
-    lastUpdate: "2023-12-01",
-    currentStep: 4,
-    steps: [
-      { name: "Application Submitted", date: "Nov 20, 2023", status: "completed" },
-      { name: "Document Verification", date: "Nov 22, 2023", status: "completed" },
-      { name: "Credit Assessment", date: "Nov 25, 2023", status: "completed" },
-      { name: "Committee Review", date: "Dec 1, 2023", status: "rejected" },
-      { name: "Final Decision", date: "—", status: "pending" },
-    ],
-  },
-]
+import { useAuth } from "@/lib/auth-context"
+import { getUserByEmail, getLoans } from "@/lib/json-storage"
+import { formatTND } from "@/lib/currency"
 
 const getStatusBadge = (status: string) => {
   switch (status) {
@@ -89,13 +41,98 @@ const getStatusBadge = (status: string) => {
 }
 
 export default function LoanStatus() {
-  const [selectedLoan, setSelectedLoan] = useState(loanApplications[0])
+  const { user } = useAuth()
+  const [loans, setLoans] = useState<any[]>([])
+  const [selectedLoan, setSelectedLoan] = useState<any>(null)
   const [notifications, setNotifications] = useState({
     statusUpdates: true,
     documentRequests: true,
     approvalAlerts: true,
     smsNotifications: false,
   })
+
+  useEffect(() => {
+    if (user?.email) {
+      const clientUser = getUserByEmail(user.email)
+      if (clientUser) {
+        const userLoans = getLoans(clientUser.id)
+        // Transform loans to match the UI format
+        const transformedLoans = userLoans.map((loan, index) => {
+          const status = loan.status === "pending" ? "under_review" : loan.status
+          const appliedDate = new Date(loan.applicationDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+          const lastUpdate = new Date(loan.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+          
+          // Generate timeline steps based on status
+          const steps = [
+            { name: "Application Submitted", date: appliedDate, status: "completed" },
+            { name: "Document Verification", date: status === "pending" ? "Pending" : appliedDate, status: status === "pending" ? "pending" : "completed" },
+            { name: "Credit Assessment", date: status === "pending" ? "In Progress" : (status === "approved" || status === "rejected" ? appliedDate : "Pending"), status: status === "pending" ? "current" : (status === "approved" || status === "rejected" ? "completed" : "pending") },
+            { name: "Committee Review", date: status === "approved" || status === "rejected" ? appliedDate : "Pending", status: status === "approved" || status === "rejected" ? "completed" : "pending" },
+            { name: "Final Decision", date: status === "approved" || status === "rejected" ? lastUpdate : "Pending", status: status === "approved" ? "completed" : (status === "rejected" ? "rejected" : "pending") },
+          ]
+
+          return {
+            id: loan.id,
+            type: loan.purpose,
+            amount: loan.amount,
+            status: status,
+            appliedDate: loan.applicationDate,
+            lastUpdate: lastUpdate,
+            currentStep: status === "approved" ? 5 : (status === "rejected" ? 4 : 2),
+            steps: steps,
+            interestRate: loan.interestRate,
+            term: loan.term
+          }
+        })
+        
+        setLoans(transformedLoans)
+        if (transformedLoans.length > 0) {
+          setSelectedLoan(transformedLoans[0])
+        }
+      }
+    }
+  }, [user])
+
+  const handleRefresh = () => {
+    if (user?.email) {
+      const clientUser = getUserByEmail(user.email)
+      if (clientUser) {
+        const userLoans = getLoans(clientUser.id)
+        const transformedLoans = userLoans.map((loan) => {
+          const status = loan.status === "pending" ? "under_review" : loan.status
+          const appliedDate = new Date(loan.applicationDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+          const lastUpdate = new Date(loan.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+          
+          const steps = [
+            { name: "Application Submitted", date: appliedDate, status: "completed" },
+            { name: "Document Verification", date: status === "pending" ? "Pending" : appliedDate, status: status === "pending" ? "pending" : "completed" },
+            { name: "Credit Assessment", date: status === "pending" ? "In Progress" : (status === "approved" || status === "rejected" ? appliedDate : "Pending"), status: status === "pending" ? "current" : (status === "approved" || status === "rejected" ? "completed" : "pending") },
+            { name: "Committee Review", date: status === "approved" || status === "rejected" ? appliedDate : "Pending", status: status === "approved" || status === "rejected" ? "completed" : "pending" },
+            { name: "Final Decision", date: status === "approved" || status === "rejected" ? lastUpdate : "Pending", status: status === "approved" ? "completed" : (status === "rejected" ? "rejected" : "pending") },
+          ]
+
+          return {
+            id: loan.id,
+            type: loan.purpose,
+            amount: loan.amount,
+            status: status,
+            appliedDate: loan.applicationDate,
+            lastUpdate: lastUpdate,
+            currentStep: status === "approved" ? 5 : (status === "rejected" ? 4 : 2),
+            steps: steps,
+            interestRate: loan.interestRate,
+            term: loan.term
+          }
+        })
+        
+        setLoans(transformedLoans)
+        if (transformedLoans.length > 0 && selectedLoan) {
+          const updated = transformedLoans.find(l => l.id === selectedLoan.id)
+          if (updated) setSelectedLoan(updated)
+        }
+      }
+    }
+  }
 
   return (
     <>
@@ -105,7 +142,7 @@ export default function LoanStatus() {
           title="Loan Status" 
           description="Track the status of your loan applications"
           actions={
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={handleRefresh}>
               <RefreshCw className="mr-2 h-4 w-4" />
               Refresh
             </Button>
@@ -119,11 +156,25 @@ export default function LoanStatus() {
           </TabsList>
 
           <TabsContent value="applications" className="mt-6">
-            <div className="grid gap-6 lg:grid-cols-3">
-              {/* Applications List */}
-              <div className="space-y-4">
-                <h3 className="font-medium text-sm text-muted-foreground">Your Applications</h3>
-                {loanApplications.map((loan) => (
+            {loans.length === 0 ? (
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="text-center py-12">
+                    <FileText className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">No Loan Applications</h3>
+                    <p className="text-muted-foreground mb-4">You haven't submitted any loan applications yet.</p>
+                    <Button asChild>
+                      <a href="/loan/apply">Apply for a Loan</a>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid gap-6 lg:grid-cols-3">
+                {/* Applications List */}
+                <div className="space-y-4">
+                  <h3 className="font-medium text-sm text-muted-foreground">Your Applications</h3>
+                  {loans.map((loan) => (
                   <Card
                     key={loan.id}
                     className={`cursor-pointer transition-colors hover:bg-muted/50 ${
@@ -134,10 +185,10 @@ export default function LoanStatus() {
                     <CardContent className="pt-4">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="font-mono text-sm">{loan.id}</p>
+                          <p className="font-mono text-sm">{loan.id.substring(0, 12)}</p>
                           <p className="font-medium">{loan.type}</p>
                           <p className="text-sm text-muted-foreground">
-                            RWF {loan.amount.toLocaleString()}
+                            {formatTND(loan.amount)}
                           </p>
                         </div>
                         <div className="text-right">
@@ -153,17 +204,18 @@ export default function LoanStatus() {
               </div>
 
               {/* Selected Loan Details */}
-              <div className="lg:col-span-2">
-                <Card>
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <CardTitle className="flex items-center gap-2">
-                          {selectedLoan.type}
-                          {getStatusBadge(selectedLoan.status)}
-                        </CardTitle>
-                        <CardDescription>Application ID: {selectedLoan.id}</CardDescription>
-                      </div>
+              {selectedLoan && (
+                <div className="lg:col-span-2">
+                  <Card>
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <CardTitle className="flex items-center gap-2">
+                            {selectedLoan.type}
+                            {getStatusBadge(selectedLoan.status)}
+                          </CardTitle>
+                          <CardDescription>Application ID: {selectedLoan.id.substring(0, 12)}</CardDescription>
+                        </div>
                       <Button variant="outline" size="sm">
                         <FileText className="mr-2 h-4 w-4" />
                         View Documents
@@ -179,7 +231,7 @@ export default function LoanStatus() {
                           <span className="text-sm">Loan Amount</span>
                         </div>
                         <p className="mt-1 text-xl font-bold">
-                          RWF {selectedLoan.amount.toLocaleString()}
+                          {formatTND(selectedLoan.amount)}
                         </p>
                       </div>
                       <div className="rounded-lg border p-4">
@@ -286,7 +338,9 @@ export default function LoanStatus() {
                   </CardContent>
                 </Card>
               </div>
+              )}
             </div>
+            )}
           </TabsContent>
 
           {/* Notifications Tab */}

@@ -56,7 +56,7 @@ export const MOCK_USERS: Record<string, User> = {
   agent: {
     id: '1',
     name: 'Ahmed Ben Salem',
-    email: 'agent@finbridge.tn',
+    email: 'agent@bankify.tn',
     role: 'agent',
     phone: '+216 98 765 432',
     address: 'Tunis, Tunisia'
@@ -64,7 +64,7 @@ export const MOCK_USERS: Record<string, User> = {
   client: {
     id: '2',
     name: 'Fatima Mansour',
-    email: 'client@finbridge.tn',
+    email: 'client@bankify.tn',
     role: 'client',
     balance: 15750.500,
     phone: '+216 22 123 456',
@@ -73,7 +73,7 @@ export const MOCK_USERS: Record<string, User> = {
   admin: {
     id: '3',
     name: 'Mohamed Trabelsi',
-    email: 'admin@finbridge.tn',
+    email: 'admin@bankify.tn',
     role: 'admin',
     phone: '+216 55 987 654',
     address: 'Sousse, Tunisia'
@@ -89,7 +89,7 @@ export const MOCK_TRANSACTIONS: Transaction[] = [
     description: 'Salary deposit',
     date: '2024-12-10',
     status: 'completed',
-    to: 'client@finbridge.tn'
+    to: 'client@bankify.tn'
   },
   {
     id: 'tx2',
@@ -98,7 +98,7 @@ export const MOCK_TRANSACTIONS: Transaction[] = [
     description: 'ATM withdrawal',
     date: '2024-12-09',
     status: 'completed',
-    from: 'client@finbridge.tn'
+    from: 'client@bankify.tn'
   },
   {
     id: 'tx3',
@@ -107,7 +107,7 @@ export const MOCK_TRANSACTIONS: Transaction[] = [
     description: 'Utility payment',
     date: '2024-12-08',
     status: 'completed',
-    from: 'client@finbridge.tn',
+    from: 'client@bankify.tn',
     to: 'STEG'
   },
   {
@@ -117,7 +117,7 @@ export const MOCK_TRANSACTIONS: Transaction[] = [
     description: 'Freelance payment',
     date: '2024-12-05',
     status: 'completed',
-    to: 'client@finbridge.tn'
+    to: 'client@bankify.tn'
   },
   {
     id: 'tx5',
@@ -126,7 +126,7 @@ export const MOCK_TRANSACTIONS: Transaction[] = [
     description: 'Shopping',
     date: '2024-12-03',
     status: 'completed',
-    from: 'client@finbridge.tn'
+    from: 'client@bankify.tn'
   }
 ]
 

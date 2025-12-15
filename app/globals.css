@@ -144,7 +144,7 @@
   }
 }
 
-/* Custom animations for FinBridge */
+/* Custom animations for Bankify */
 @keyframes float {
   0%, 100% {
     transform: translateY(0px);

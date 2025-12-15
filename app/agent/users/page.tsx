@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Header } from "@/components/layout/header"
 import { PageShell, PageHeader } from "@/components/shared/page-shell"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -38,9 +38,9 @@ import { useRouter } from "next/navigation"
 
 // Mock users data
 const initialUsers = [
-  { id: 1, name: "Agent User", email: "agent@finbridge.tn", role: "agent", status: "active", created: "2024-01-15" },
-  { id: 2, name: "Client User", email: "client@finbridge.tn", role: "client", status: "active", created: "2024-02-20" },
-  { id: 3, name: "Admin User", email: "admin@finbridge.tn", role: "admin", status: "active", created: "2024-01-01" },
+  { id: 1, name: "Agent User", email: "agent@bankify.tn", role: "agent", status: "active", created: "2024-01-15" },
+  { id: 2, name: "Client User", email: "client@bankify.tn", role: "client", status: "active", created: "2024-02-20" },
+  { id: 3, name: "Admin User", email: "admin@bankify.tn", role: "admin", status: "active", created: "2024-01-01" },
   { id: 4, name: "John Smith", email: "john.smith@example.tn", role: "client", status: "active", created: "2024-03-10" },
   { id: 5, name: "Sarah Johnson", email: "sarah.j@example.tn", role: "client", status: "inactive", created: "2024-02-28" },
 ]
@@ -58,8 +58,13 @@ export default function UsersPage() {
   })
 
   // Only agents can access this page
+  useEffect(() => {
+    if (user && !hasRole("agent")) {
+      router.push(`/${user.role}`)
+    }
+  }, [user, hasRole, router])
+
   if (!hasRole("agent")) {
-    router.push(`/${user?.role}`)
     return null
   }
 

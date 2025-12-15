@@ -39,7 +39,7 @@ export default function Home() {
                   <Building2 className="h-6 w-6 text-white" />
                 </div>
                 <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                  FinBridge
+                  Bankify
                 </span>
               </div>
               <div className="flex items-center gap-4">
@@ -84,7 +84,7 @@ export default function Home() {
             </h1>
 
             <p className="mx-auto mb-10 max-w-2xl text-lg text-slate-600 dark:text-slate-300 sm:text-xl">
-              Experience seamless financial services with FinBridge. Manage your money,
+              Experience seamless financial services with Bankify. Manage your money,
               track budgets, and achieve your financial goals - all in Tunisian Dinars (TND).
             </p>
 
@@ -283,7 +283,7 @@ export default function Home() {
 
           <div className="flex flex-col justify-center">
             <h2 className="mb-6 text-4xl font-bold text-slate-900 dark:text-white">
-              Why Choose FinBridge?
+              Why Choose Bankify?
             </h2>
             <p className="mb-6 text-lg text-slate-600 dark:text-slate-300">
               We're revolutionizing rural banking in Tunisia with cutting-edge technology
@@ -338,7 +338,7 @@ export default function Home() {
               Ready to Transform Your Financial Future?
             </h2>
             <p className="mb-8 text-xl text-blue-100">
-              Join thousands of satisfied users managing their finances with FinBridge
+              Join thousands of satisfied users managing their finances with Bankify
             </p>
             <Button asChild size="lg" className="bg-white text-blue-600 hover:bg-blue-50 shadow-xl text-base px-8 py-6">
               <Link href="/login">
@@ -359,11 +359,11 @@ export default function Home() {
                 <Building2 className="h-6 w-6 text-white" />
               </div>
               <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                FinBridge
+                Bankify
               </span>
             </div>
             <p className="text-sm text-slate-600 dark:text-slate-300">
-              © 2024 FinBridge. Empowering rural communities with modern banking.
+              © 2024 Bankify. Empowering rural communities with modern banking.
             </p>
           </div>
         </div>

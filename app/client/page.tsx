@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { Header } from "@/components/layout/header"
 import { PageShell, PageHeader } from "@/components/shared/page-shell"
 import { StatCard } from "@/components/shared/stat-card"
@@ -27,32 +28,8 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { formatTND } from "@/lib/currency"
-import { MOCK_USERS, MOCK_TRANSACTIONS, MOCK_GOALS } from "@/lib/mock-data"
-
-const balanceHistory = [
-  { day: "Mon", balance: 12500.000 },
-  { day: "Tue", balance: 13200.000 },
-  { day: "Wed", balance: 14100.000 },
-  { day: "Thu", balance: 14800.000 },
-  { day: "Fri", balance: 15200.000 },
-  { day: "Sat", balance: 15500.000 },
-  { day: "Sun", balance: 15750.500 },
-]
-
-const recentActivity = MOCK_TRANSACTIONS.slice(0, 4).map((tx, idx) => ({
-  id: tx.id,
-  type: tx.type,
-  description: tx.description,
-  amount: tx.type === 'withdrawal' ? -tx.amount : tx.amount,
-  date: idx === 0 ? "Today, 10:30 AM" : idx === 1 ? "Today, 8:15 AM" : "Yesterday"
-}))
-
-const savingsGoals = MOCK_GOALS.slice(0, 2).map(goal => ({
-  name: goal.name,
-  current: goal.currentAmount,
-  target: goal.targetAmount,
-  color: "bg-primary"
-}))
+import { useAuth } from "@/lib/auth-context"
+import { getUserByEmail, getTransactions, getGoals } from "@/lib/json-storage"
 
 const chartConfig = {
   balance: {
@@ -62,8 +39,91 @@ const chartConfig = {
 }
 
 export default function ClientDashboard() {
-  const currentBalance = MOCK_USERS.client.balance || 15750.500
-  const lastUpdated = new Date().toLocaleTimeString()
+  const { user } = useAuth()
+  const [currentBalance, setCurrentBalance] = useState(0)
+  const [transactions, setTransactions] = useState<any[]>([])
+  const [goals, setGoals] = useState<any[]>([])
+  const [lastUpdated, setLastUpdated] = useState(new Date().toLocaleTimeString())
+
+  useEffect(() => {
+    if (user?.email) {
+      const clientUser = getUserByEmail(user.email)
+      if (clientUser) {
+        setCurrentBalance(clientUser.balance || 0)
+        
+        // Get transactions
+        const userTransactions = getTransactions(clientUser.id)
+        setTransactions(userTransactions)
+        
+        // Get goals
+        const userGoals = getGoals(clientUser.id)
+        setGoals(userGoals)
+        
+        setLastUpdated(new Date().toLocaleTimeString())
+      }
+    }
+  }, [user])
+
+  const handleRefresh = () => {
+    if (user?.email) {
+      const clientUser = getUserByEmail(user.email)
+      if (clientUser) {
+        setCurrentBalance(clientUser.balance || 0)
+        const userTransactions = getTransactions(clientUser.id)
+        setTransactions(userTransactions)
+        const userGoals = getGoals(clientUser.id)
+        setGoals(userGoals)
+        setLastUpdated(new Date().toLocaleTimeString())
+      }
+    }
+  }
+
+  // Calculate stats from transactions
+  const thisMonthTransactions = transactions.filter(tx => {
+    const txDate = new Date(tx.date)
+    const now = new Date()
+    return txDate.getMonth() === now.getMonth() && txDate.getFullYear() === now.getFullYear()
+  })
+
+  const totalDeposits = thisMonthTransactions
+    .filter(tx => tx.type === 'deposit' && tx.status === 'completed')
+    .reduce((sum, tx) => sum + tx.amount, 0)
+
+  const totalWithdrawals = thisMonthTransactions
+    .filter(tx => tx.type === 'withdrawal' && tx.status === 'completed')
+    .reduce((sum, tx) => sum + tx.amount, 0)
+
+  const totalSavings = goals.reduce((sum, goal) => sum + goal.currentAmount, 0)
+
+  // Balance history (last 7 days) - simplified version
+  const balanceHistory = Array.from({ length: 7 }, (_, i) => {
+    const date = new Date()
+    date.setDate(date.getDate() - (6 - i))
+    // For now, show current balance for all days
+    // In a real app, you'd calculate historical balance from transactions
+    return {
+      day: date.toLocaleDateString('en-US', { weekday: 'short' }),
+      balance: currentBalance
+    }
+  })
+
+  const recentActivity = transactions
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, 4)
+    .map((tx, idx) => ({
+      id: tx.id,
+      type: tx.type,
+      description: tx.description,
+      amount: tx.type === 'withdrawal' ? -tx.amount : tx.amount,
+      date: idx === 0 ? "Today" : idx === 1 ? "Yesterday" : new Date(tx.date).toLocaleDateString()
+    }))
+
+  const savingsGoals = goals.slice(0, 2).map(goal => ({
+    name: goal.name,
+    current: goal.currentAmount,
+    target: goal.targetAmount,
+    color: "bg-primary"
+  }))
 
   return (
     <>
@@ -73,7 +133,7 @@ export default function ClientDashboard() {
           title="My Dashboard"
           description="Real-time overview of your finances in TND"
           actions={
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={handleRefresh}>
               <RefreshCw className="mr-2 h-4 w-4" />
               Refresh
             </Button>
@@ -116,27 +176,27 @@ export default function ClientDashboard() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <StatCard
             title="Total Deposits"
-            value={formatTND(1700.000)}
+            value={formatTND(totalDeposits)}
             icon={ArrowUpRight}
             trend={{ value: 8.2, isPositive: true }}
             description="this month"
           />
           <StatCard
             title="Total Withdrawals"
-            value={formatTND(525.750)}
+            value={formatTND(totalWithdrawals)}
             icon={ArrowDownRight}
             description="this month"
           />
           <StatCard
             title="Savings Progress"
-            value={formatTND(18450.000)}
+            value={formatTND(totalSavings)}
             icon={PiggyBank}
             trend={{ value: 15, isPositive: true }}
             description="towards goals"
           />
           <StatCard
             title="Active Goals"
-            value="3"
+            value={goals.length.toString()}
             icon={Target}
             description="savings goals"
           />

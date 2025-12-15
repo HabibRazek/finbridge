@@ -29,13 +29,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Load user from localStorage on mount
   useEffect(() => {
-    const storedUser = localStorage.getItem("finbridge_user")
+    const storedUser = localStorage.getItem("bankify_user")
     if (storedUser) {
       try {
         setUser(JSON.parse(storedUser))
       } catch (error) {
         console.error("Failed to parse user data:", error)
-        localStorage.removeItem("finbridge_user")
+        localStorage.removeItem("bankify_user")
       }
     }
     setIsLoading(false)
@@ -68,9 +68,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return
       }
 
+      // Admin routes
+      if (pathname.startsWith("/admin") && user.role !== "admin") {
+        router.push(`/${user.role}`)
+        return
+      }
+
       // Loan routes - accessible by clients and agents
       if (pathname.startsWith("/loan") && user.role === "admin") {
-        router.push("/dashboard")
+        router.push("/admin")
         return
       }
     }
@@ -78,12 +84,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = (userData: User) => {
     setUser(userData)
-    localStorage.setItem("finbridge_user", JSON.stringify(userData))
+    localStorage.setItem("bankify_user", JSON.stringify(userData))
   }
 
   const logout = () => {
     setUser(null)
-    localStorage.removeItem("finbridge_user")
+    localStorage.removeItem("bankify_user")
     router.push("/login")
   }
 

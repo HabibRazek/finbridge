@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Header } from "@/components/layout/header"
 import { PageShell, PageHeader } from "@/components/shared/page-shell"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -16,52 +16,102 @@ import {
   ArrowDownRight,
   DollarSign,
   Filter,
-  Download
+  Download,
+  RefreshCw,
+  Receipt
 } from "lucide-react"
-
-const transactions = [
-  { id: 1, type: "deposit", category: "Salary", description: "Monthly Salary - ABC Corp", amount: 125000, date: "2024-01-15", time: "09:00 AM" },
-  { id: 2, type: "withdrawal", category: "ATM", description: "ATM Withdrawal - Kigali", amount: -5000, date: "2024-01-15", time: "02:30 PM" },
-  { id: 3, type: "deposit", category: "Agent", description: "Cash Deposit via Agent Jean", amount: 15000, date: "2024-01-14", time: "11:45 AM" },
-  { id: 4, type: "fee", category: "Commission", description: "Agent Commission Fee", amount: -375, date: "2024-01-14", time: "11:45 AM" },
-  { id: 5, type: "withdrawal", category: "Transfer", description: "Transfer to Marie Claire", amount: -20000, date: "2024-01-13", time: "04:15 PM" },
-  { id: 6, type: "deposit", category: "Refund", description: "Merchant Refund - Shop XYZ", amount: 2500, date: "2024-01-12", time: "10:00 AM" },
-  { id: 7, type: "withdrawal", category: "Bill", description: "Electricity Bill Payment", amount: -8500, date: "2024-01-11", time: "08:30 AM" },
-  { id: 8, type: "deposit", category: "Investment", description: "Investment Returns", amount: 5000, date: "2024-01-10", time: "03:00 PM" },
-]
-
-type Transaction = (typeof transactions)[number]
+import { formatTND } from "@/lib/currency"
+import { useAuth } from "@/lib/auth-context"
+import { getUserByEmail, getTransactions, type Transaction } from "@/lib/json-storage"
 
 const groupTransactionsByDate = (transactions: Transaction[]) => {
   const grouped: { [key: string]: Transaction[] } = {}
   transactions.forEach((txn) => {
-    if (!grouped[txn.date]) {
-      grouped[txn.date] = []
+    const date = txn.date
+    if (!grouped[date]) {
+      grouped[date] = []
     }
-    grouped[txn.date].push(txn)
+    grouped[date].push(txn)
   })
-  return grouped
+  // Sort dates in descending order
+  return Object.keys(grouped)
+    .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())
+    .reduce((acc, date) => {
+      acc[date] = grouped[date].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      return acc
+    }, {} as { [key: string]: Transaction[] })
 }
 
 export default function ClientTransactionHistory() {
+  const { user } = useAuth()
+  const [transactions, setTransactions] = useState<Transaction[]>([])
   const [searchQuery, setSearchQuery] = useState("")
   const [activeTab, setActiveTab] = useState("all")
 
-  const filteredTransactions = transactions.filter((txn) => {
+  useEffect(() => {
+    if (user?.email) {
+      const clientUser = getUserByEmail(user.email)
+      if (clientUser) {
+        const userTransactions = getTransactions(clientUser.id)
+        setTransactions(userTransactions)
+      }
+    }
+  }, [user])
+
+  const handleRefresh = () => {
+    if (user?.email) {
+      const clientUser = getUserByEmail(user.email)
+      if (clientUser) {
+        const userTransactions = getTransactions(clientUser.id)
+        setTransactions(userTransactions)
+      }
+    }
+  }
+
+  // Transform transactions for display
+  const displayTransactions = transactions.map(txn => {
+    const displayAmount = txn.type === 'deposit' ? txn.amount : -txn.amount
+    const date = new Date(txn.date)
+    const time = new Date(txn.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+    
+    // Determine category from description or type
+    let category = txn.type.charAt(0).toUpperCase() + txn.type.slice(1)
+    if (txn.description.toLowerCase().includes('salary')) category = "Salary"
+    else if (txn.description.toLowerCase().includes('atm')) category = "ATM"
+    else if (txn.description.toLowerCase().includes('agent')) category = "Agent"
+    else if (txn.description.toLowerCase().includes('transfer')) category = "Transfer"
+    else if (txn.description.toLowerCase().includes('bill')) category = "Bill"
+    else if (txn.description.toLowerCase().includes('refund')) category = "Refund"
+    else if (txn.description.toLowerCase().includes('investment')) category = "Investment"
+    
+    return {
+      ...txn,
+      displayAmount,
+      category,
+      time,
+      date: txn.date
+    }
+  })
+
+  const filteredTransactions = displayTransactions.filter((txn) => {
     const matchesSearch = 
       txn.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
       txn.category.toLowerCase().includes(searchQuery.toLowerCase())
     
     if (activeTab === "all") return matchesSearch
-    if (activeTab === "deposits") return matchesSearch && txn.amount > 0
-    if (activeTab === "withdrawals") return matchesSearch && txn.amount < 0
+    if (activeTab === "deposits") return matchesSearch && txn.type === "deposit"
+    if (activeTab === "withdrawals") return matchesSearch && (txn.type === "withdrawal" || txn.type === "transfer")
     return matchesSearch
   })
 
   const groupedTransactions = groupTransactionsByDate(filteredTransactions)
 
-  const totalDeposits = transactions.filter(t => t.amount > 0).reduce((sum, t) => sum + t.amount, 0)
-  const totalWithdrawals = Math.abs(transactions.filter(t => t.amount < 0).reduce((sum, t) => sum + t.amount, 0))
+  const totalDeposits = transactions
+    .filter(t => t.type === "deposit" && t.status === "completed")
+    .reduce((sum, t) => sum + t.amount, 0)
+  const totalWithdrawals = transactions
+    .filter(t => (t.type === "withdrawal" || t.type === "transfer") && t.status === "completed")
+    .reduce((sum, t) => sum + t.amount, 0)
 
   return (
     <>
@@ -71,10 +121,16 @@ export default function ClientTransactionHistory() {
           title="Transaction History" 
           description="View deposits, withdrawals, and commissions"
           actions={
-            <Button variant="outline" size="sm">
-              <Download className="mr-2 h-4 w-4" />
-              Export
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={handleRefresh}>
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Refresh
+              </Button>
+              <Button variant="outline" size="sm">
+                <Download className="mr-2 h-4 w-4" />
+                Export
+              </Button>
+            </div>
           }
         />
 
@@ -88,7 +144,7 @@ export default function ClientTransactionHistory() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Total Deposits</p>
-                  <p className="text-xl font-bold text-green-600">+${totalDeposits.toLocaleString()}</p>
+                  <p className="text-xl font-bold text-green-600">{formatTND(totalDeposits)}</p>
                 </div>
               </div>
             </CardContent>
@@ -101,7 +157,7 @@ export default function ClientTransactionHistory() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Total Withdrawals</p>
-                  <p className="text-xl font-bold text-red-600">-${totalWithdrawals.toLocaleString()}</p>
+                  <p className="text-xl font-bold text-red-600">{formatTND(totalWithdrawals)}</p>
                 </div>
               </div>
             </CardContent>
@@ -114,7 +170,9 @@ export default function ClientTransactionHistory() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Net Change</p>
-                  <p className="text-xl font-bold">${(totalDeposits - totalWithdrawals).toLocaleString()}</p>
+                  <p className={`text-xl font-bold ${(totalDeposits - totalWithdrawals) >= 0 ? "text-green-600" : "text-red-600"}`}>
+                    {(totalDeposits - totalWithdrawals) >= 0 ? "+" : ""}{formatTND(totalDeposits - totalWithdrawals)}
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -148,47 +206,69 @@ export default function ClientTransactionHistory() {
                 <TabsTrigger value="withdrawals">Withdrawals</TabsTrigger>
               </TabsList>
               <TabsContent value={activeTab} className="mt-4">
-                <ScrollArea className="h-[400px] pr-4">
-                  {Object.entries(groupedTransactions).map(([date, txns]) => (
-                    <div key={date} className="mb-6">
-                      <p className="mb-3 text-sm font-medium text-muted-foreground">{date}</p>
-                      <div className="space-y-3">
-                        {txns.map((txn) => (
-                          <div
-                            key={txn.id}
-                            className="flex items-center justify-between rounded-lg border p-4"
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className={`flex h-10 w-10 items-center justify-center rounded-full ${
-                                txn.amount > 0 ? "bg-green-100" : "bg-red-100"
-                              }`}>
-                                {txn.amount > 0 ? (
-                                  <ArrowUpRight className="h-5 w-5 text-green-600" />
-                                ) : (
-                                  <ArrowDownRight className="h-5 w-5 text-red-600" />
-                                )}
-                              </div>
-                              <div>
-                                <p className="font-medium">{txn.description}</p>
-                                <div className="flex items-center gap-2">
-                                  <Badge variant="outline" className="text-xs">
-                                    {txn.category}
-                                  </Badge>
-                                  <span className="text-xs text-muted-foreground">{txn.time}</span>
+                {filteredTransactions.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Receipt className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">No Transactions Found</h3>
+                    <p className="text-muted-foreground">
+                      {searchQuery ? "Try adjusting your search" : "You haven't made any transactions yet"}
+                    </p>
+                  </div>
+                ) : (
+                  <ScrollArea className="h-[400px] pr-4">
+                    {Object.entries(groupedTransactions).map(([date, txns]) => (
+                      <div key={date} className="mb-6">
+                        <p className="mb-3 text-sm font-medium text-muted-foreground">
+                          {new Date(date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                        </p>
+                        <div className="space-y-3">
+                          {txns.map((txn) => {
+                            const isDeposit = txn.type === "deposit"
+                            const displayAmount = isDeposit ? txn.amount : -txn.amount
+                            return (
+                              <div
+                                key={txn.id}
+                                className="flex items-center justify-between rounded-lg border p-4"
+                              >
+                                <div className="flex items-center gap-3">
+                                  <div className={`flex h-10 w-10 items-center justify-center rounded-full ${
+                                    isDeposit ? "bg-green-100" : "bg-red-100"
+                                  }`}>
+                                    {isDeposit ? (
+                                      <ArrowUpRight className="h-5 w-5 text-green-600" />
+                                    ) : (
+                                      <ArrowDownRight className="h-5 w-5 text-red-600" />
+                                    )}
+                                  </div>
+                                  <div>
+                                    <p className="font-medium">{txn.description}</p>
+                                    <div className="flex items-center gap-2">
+                                      <Badge variant="outline" className="text-xs">
+                                        {txn.category}
+                                      </Badge>
+                                      <Badge 
+                                        variant={txn.status === "completed" ? "default" : txn.status === "pending" ? "secondary" : "destructive"}
+                                        className="text-xs"
+                                      >
+                                        {txn.status}
+                                      </Badge>
+                                      <span className="text-xs text-muted-foreground">{txn.time}</span>
+                                    </div>
+                                  </div>
                                 </div>
+                                <span className={`font-semibold ${
+                                  isDeposit ? "text-green-600" : "text-red-600"
+                                }`}>
+                                  {isDeposit ? "+" : ""}{formatTND(Math.abs(displayAmount))}
+                                </span>
                               </div>
-                            </div>
-                            <span className={`font-semibold ${
-                              txn.amount > 0 ? "text-green-600" : "text-red-600"
-                            }`}>
-                              {txn.amount > 0 ? "+" : ""}${Math.abs(txn.amount).toLocaleString()}
-                            </span>
-                          </div>
-                        ))}
+                            )
+                          })}
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </ScrollArea>
+                    ))}
+                  </ScrollArea>
+                )}
               </TabsContent>
             </Tabs>
           </CardContent>

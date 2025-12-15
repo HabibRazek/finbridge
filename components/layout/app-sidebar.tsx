@@ -60,8 +60,12 @@ const loanMenuItems = [
 const adminMenuItems = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
   { title: "User Management", url: "/admin/users", icon: Users },
-  { title: "System Settings", url: "/admin/settings", icon: Settings },
-  { title: "Security", url: "/admin/security", icon: Shield },
+  { title: "Transactions", url: "/admin/transactions", icon: Receipt },
+  { title: "Budgets", url: "/admin/budgets", icon: PiggyBank },
+  { title: "Goals", url: "/admin/goals", icon: Target },
+  { title: "Loans", url: "/admin/loans", icon: FileText },
+  { title: "Commissions", url: "/admin/commissions", icon: DollarSign },
+  { title: "Settings", url: "/admin/settings", icon: Settings },
 ]
 
 export function AppSidebar() {
@@ -103,7 +107,7 @@ export function AppSidebar() {
         <Link href="/" className="flex items-center gap-3">
           <Building2 className="h-8 w-8 text-sidebar-primary" />
           <div>
-            <h1 className="text-lg font-bold text-sidebar-foreground">FinBridge</h1>
+            <h1 className="text-lg font-bold text-sidebar-foreground">Bankify</h1>
             <p className="text-xs text-sidebar-foreground/70">Rural Banking Platform</p>
           </div>
         </Link>
@@ -131,7 +135,7 @@ export function AppSidebar() {
       </SidebarContent>
       <SidebarFooter className="border-t border-sidebar-border p-4">
         <div className="text-xs text-sidebar-foreground/60">
-          © 2024 FinBridge
+          © 2024 Bankify
         </div>
       </SidebarFooter>
     </Sidebar>

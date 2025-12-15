@@ -1,10 +1,10 @@
-# FinBridge Application Requirements
+# Bankify Application Requirements
 
-This document outlines the functional and non-functional requirements for the FinBridge application.
+This document outlines the functional and non-functional requirements for the Bankify application.
 
 ## 1. Overview
 
-FinBridge is a digital banking and micro-lending platform with the following key modules:
+Bankify is a digital banking and micro-lending platform with the following key modules:
 - **Client Module:** For end-users to manage their finances.
 - **Agent Module:** For agents to manage client interactions and transactions.
 - **Loan Module:** For managing the loan application and approval process.

@@ -24,8 +24,14 @@ import { formatTND } from "@/lib/currency"
 import { useAuth } from "@/lib/auth-context"
 import { getUserByEmail, getTransactions, type Transaction } from "@/lib/json-storage"
 
-const groupTransactionsByDate = (transactions: Transaction[]) => {
-  const grouped: { [key: string]: Transaction[] } = {}
+type DisplayTransaction = Transaction & {
+  displayAmount: number
+  category: string
+  time: string
+}
+
+const groupTransactionsByDate = (transactions: DisplayTransaction[]) => {
+  const grouped: { [key: string]: DisplayTransaction[] } = {}
   transactions.forEach((txn) => {
     const date = txn.date
     if (!grouped[date]) {
@@ -39,7 +45,7 @@ const groupTransactionsByDate = (transactions: Transaction[]) => {
     .reduce((acc, date) => {
       acc[date] = grouped[date].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
       return acc
-    }, {} as { [key: string]: Transaction[] })
+    }, {} as { [key: string]: DisplayTransaction[] })
 }
 
 export default function ClientTransactionHistory() {
@@ -69,7 +75,7 @@ export default function ClientTransactionHistory() {
   }
 
   // Transform transactions for display
-  const displayTransactions = transactions.map(txn => {
+  const displayTransactions: DisplayTransaction[] = transactions.map(txn => {
     const displayAmount = txn.type === 'deposit' ? txn.amount : -txn.amount
     const date = new Date(txn.date)
     const time = new Date(txn.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })

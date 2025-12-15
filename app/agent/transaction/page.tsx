@@ -292,7 +292,7 @@ export default function RecordTransaction() {
                   <span className="text-sm">Amount entered</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  {formData.accountNumber ? (
+                  {formData.clientEmail ? (
                     <CheckCircle2 className="h-4 w-4 text-green-500" />
                   ) : (
                     <AlertCircle className="h-4 w-4 text-muted-foreground" />

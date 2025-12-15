@@ -65,8 +65,8 @@ export default function LoanStatus() {
           // Generate timeline steps based on status
           const steps = [
             { name: "Application Submitted", date: appliedDate, status: "completed" },
-            { name: "Document Verification", date: status === "pending" ? "Pending" : appliedDate, status: status === "pending" ? "pending" : "completed" },
-            { name: "Credit Assessment", date: status === "pending" ? "In Progress" : (status === "approved" || status === "rejected" ? appliedDate : "Pending"), status: status === "pending" ? "current" : (status === "approved" || status === "rejected" ? "completed" : "pending") },
+            { name: "Document Verification", date: status === "under_review" ? "Pending" : appliedDate, status: status === "under_review" ? "pending" : "completed" },
+            { name: "Credit Assessment", date: status === "under_review" ? "In Progress" : (status === "approved" || status === "rejected" ? appliedDate : "Pending"), status: status === "under_review" ? "current" : (status === "approved" || status === "rejected" ? "completed" : "pending") },
             { name: "Committee Review", date: status === "approved" || status === "rejected" ? appliedDate : "Pending", status: status === "approved" || status === "rejected" ? "completed" : "pending" },
             { name: "Final Decision", date: status === "approved" || status === "rejected" ? lastUpdate : "Pending", status: status === "approved" ? "completed" : (status === "rejected" ? "rejected" : "pending") },
           ]
@@ -105,8 +105,8 @@ export default function LoanStatus() {
           
           const steps = [
             { name: "Application Submitted", date: appliedDate, status: "completed" },
-            { name: "Document Verification", date: status === "pending" ? "Pending" : appliedDate, status: status === "pending" ? "pending" : "completed" },
-            { name: "Credit Assessment", date: status === "pending" ? "In Progress" : (status === "approved" || status === "rejected" ? appliedDate : "Pending"), status: status === "pending" ? "current" : (status === "approved" || status === "rejected" ? "completed" : "pending") },
+            { name: "Document Verification", date: status === "under_review" ? "Pending" : appliedDate, status: status === "under_review" ? "pending" : "completed" },
+            { name: "Credit Assessment", date: status === "under_review" ? "In Progress" : (status === "approved" || status === "rejected" ? appliedDate : "Pending"), status: status === "under_review" ? "current" : (status === "approved" || status === "rejected" ? "completed" : "pending") },
             { name: "Committee Review", date: status === "approved" || status === "rejected" ? appliedDate : "Pending", status: status === "approved" || status === "rejected" ? "completed" : "pending" },
             { name: "Final Decision", date: status === "approved" || status === "rejected" ? lastUpdate : "Pending", status: status === "approved" ? "completed" : (status === "rejected" ? "rejected" : "pending") },
           ]
@@ -254,7 +254,7 @@ export default function LoanStatus() {
                     <div>
                       <h4 className="font-medium mb-4">Application Timeline</h4>
                       <div className="relative">
-                        {selectedLoan.steps.map((step, index) => {
+                        {selectedLoan.steps.map((step: { name: string; date: string; status: string }, index: number) => {
                           const isCompleted = step.status === "completed"
                           const isCurrent = step.status === "current"
                           const isRejected = step.status === "rejected"

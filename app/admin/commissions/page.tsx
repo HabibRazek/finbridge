@@ -38,7 +38,8 @@ export default function AdminCommissionsPage() {
   const loadCommissions = () => {
     // Get all commissions directly from data
     const data = getData()
-    setCommissions(data.commissions || [])
+    const allCommissions = data.commissions || []
+    setCommissions(allCommissions)
 
     // Calculate stats
     const totalAmount = allCommissions.reduce((sum, c) => sum + c.amount, 0)

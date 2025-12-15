@@ -25,7 +25,7 @@ export interface StoredClient extends User {
  */
 export function getRegisteredClients(): StoredClient[] {
   const { getAllUsers } = require("./json-storage")
-  return getAllUsers().filter(u => u.role === "client") as StoredClient[]
+  return getAllUsers().filter((u: User) => u.role === "client") as StoredClient[]
 }
 
 /**

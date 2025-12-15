@@ -23,6 +23,7 @@ import {
   getBudgets, 
   getGoals, 
   getLoans,
+  getData,
   type User,
   type Transaction,
   type Budget,
@@ -49,8 +50,9 @@ export default function AdminDashboard() {
     // Load all statistics
     const users = getAllUsers()
     const transactions = getTransactions()
-    const budgets = getBudgets()
-    const goals = getGoals()
+    const data = getData()
+    const budgets = data.budgets || []
+    const goals = data.goals || []
     const loans = getLoans()
 
     const totalVolume = transactions

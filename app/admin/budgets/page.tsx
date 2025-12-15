@@ -27,6 +27,7 @@ import {
   getBudgets,
   getAllUsers,
   deleteBudget,
+  getData,
   type Budget 
 } from "@/lib/json-storage"
 
@@ -40,8 +41,9 @@ export default function AdminBudgetsPage() {
   }, [])
 
   const loadBudgets = () => {
-    const allBudgets = getBudgets()
-    setBudgets(allBudgets)
+    // Get all budgets directly from data
+    const data = getData()
+    setBudgets(data.budgets || [])
   }
 
   const users = getAllUsers()

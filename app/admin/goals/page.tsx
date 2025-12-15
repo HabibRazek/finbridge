@@ -27,6 +27,7 @@ import {
   getGoals,
   getAllUsers,
   deleteGoal,
+  getData,
   type Goal 
 } from "@/lib/json-storage"
 
@@ -40,8 +41,9 @@ export default function AdminGoalsPage() {
   }, [])
 
   const loadGoals = () => {
-    const allGoals = getGoals()
-    setGoals(allGoals)
+    // Get all goals directly from data
+    const data = getData()
+    setGoals(data.goals || [])
   }
 
   const users = getAllUsers()
